@@ -1,0 +1,139 @@
+/* Guinea Insurance Customer Portal — design tokens
+   Mirrors the Autocover-v3 / Home-shield design system. */
+
+:root {
+  /* Brand palette — Primary (lime green) */
+  --brand-primary-50:  #f4f9e7;
+  --brand-primary-100: #e8f3cf;
+  --brand-primary-200: #d1e79f;
+  --brand-primary-300: #badb6f;
+  --brand-primary-400: #a8cf45;
+  --brand-primary-500: #8fb832;
+  --brand-primary-600: #729327;
+  --brand-primary-700: #566e1d;
+  --brand-primary-800: #3a4a14;
+  --brand-primary-900: #1d250a;
+  --brand-primary:     var(--brand-primary-400);
+  --brand-primary-foreground: #0a0a0a;
+
+  /* Brand palette — Secondary (neutral grey) */
+  --brand-secondary-50:  #f5f5f5;
+  --brand-secondary-100: #e8e8e9;
+  --brand-secondary-200: #d1d1d2;
+  --brand-secondary-300: #b4b5b6;
+  --brand-secondary-400: #97989a;
+  --brand-secondary-500: #7a7b7d;
+  --brand-secondary-600: #626364;
+  --brand-secondary-700: #4a4a4b;
+  --brand-secondary-800: #313232;
+  --brand-secondary-900: #191919;
+  --brand-secondary:     var(--brand-secondary-400);
+  --brand-secondary-foreground: #ffffff;
+
+  /* Brand palette — Tertiary (red, destructive + alerts) */
+  --brand-tertiary-50:  #fef2f2;
+  --brand-tertiary-100: #fde3e3;
+  --brand-tertiary-200: #fbc7c6;
+  --brand-tertiary-300: #f59b9a;
+  --brand-tertiary-400: #ea4d4b;
+  --brand-tertiary-500: #d63331;
+  --brand-tertiary-600: #b52220;
+  --brand-tertiary-700: #8c1a19;
+  --brand-tertiary-800: #631312;
+  --brand-tertiary-900: #3a0b0b;
+  --brand-tertiary:     var(--brand-tertiary-400);
+  --brand-tertiary-foreground: #ffffff;
+
+  /* Surfaces, neutrals, semantic */
+  --brand-background: #ffffff;
+  --brand-surface:    var(--brand-secondary-50);
+  --brand-border:     var(--brand-secondary-100);
+  --brand-muted:      var(--brand-secondary-500);
+  --brand-foreground: var(--brand-secondary-900);
+
+  --brand-success: #10b981;
+  --brand-warning: #f59e0b;
+  --brand-error:   var(--brand-tertiary-400);
+
+  /* Typography */
+  --brand-font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont,
+                     'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  /* Radius */
+  --brand-radius-sm: 0.5rem;
+  --brand-radius-md: 0.75rem;
+  --brand-radius-lg: 1rem;
+  --brand-radius-xl: 1.25rem;
+  --brand-radius-2xl: 1.5rem;
+
+  /* Shadows */
+  --brand-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --brand-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06);
+  --brand-shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.08);
+  --brand-shadow-xl: 0 24px 48px rgba(15, 23, 42, 0.10);
+  --brand-shadow-glow-primary: 0 8px 24px rgba(168, 207, 69, 0.30);
+
+  /* Brand gradients */
+  --brand-gradient-primary:        linear-gradient(135deg, #a8cf45 0%, #729327 100%);
+  --brand-gradient-primary-light:  linear-gradient(135deg, #e8f3cf 0%, #a8cf45 100%);
+  --brand-gradient-card:           linear-gradient(180deg, #ffffff 0%, #f4f9e7 100%);
+  --brand-gradient-hero:           linear-gradient(135deg, #0a0a0a 0%, #1a2a0a 50%, #0a0a0a 100%);
+  --brand-gradient-dark:           linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+  --brand-gradient-tertiary:       linear-gradient(135deg, #ea4d4b 0%, #d63331 100%);
+  --brand-gradient-glass:          linear-gradient(135deg, rgba(168,207,69,0.10) 0%, rgba(168,207,69,0.05) 100%);
+  --brand-gradient-radial-primary: radial-gradient(ellipse at top left, rgba(168,207,69,0.15) 0%, transparent 50%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark theme — invert the neutral scale, keep brand primary intact.   */
+/* Triggered by adding `dark` class to <html>.                         */
+/* ------------------------------------------------------------------ */
+.dark {
+  /* Inverted neutrals: 50 (lightest in light mode) becomes the darkest surface */
+  --brand-secondary-50:  #141414;
+  --brand-secondary-100: #1f1f1f;
+  --brand-secondary-200: #2a2a2a;
+  --brand-secondary-300: #3a3a3b;
+  --brand-secondary-400: #4a4a4b;
+  --brand-secondary-500: #7a7b7d;
+  --brand-secondary-600: #97989a;
+  --brand-secondary-700: #b4b5b6;
+  --brand-secondary-800: #d1d1d2;
+  --brand-secondary-900: #f5f5f5;
+
+  --brand-background: #0a0a0a;
+  --brand-surface:    #141414;
+  --brand-border:     #262626;
+  --brand-foreground: #ededed;
+  --brand-muted:      #97989a;
+
+  /* Primary tints — translucent dark tints replace pale pastels.
+     Keep --brand-primary (400) vibrant for buttons/badges. */
+  --brand-primary-50:  rgba(168, 207, 69, 0.08);
+  --brand-primary-100: rgba(168, 207, 69, 0.14);
+  --brand-primary-200: rgba(168, 207, 69, 0.22);
+  /* Text shades — flip to lighter values so chip text reads on dark */
+  --brand-primary-600: #c8e07a;
+  --brand-primary-700: #c8e07a;
+  --brand-primary-800: #d1e79f;
+  --brand-primary-900: #e8f3cf;
+
+  /* Tertiary tints */
+  --brand-tertiary-50:  rgba(234, 77, 75, 0.08);
+  --brand-tertiary-100: rgba(234, 77, 75, 0.16);
+  --brand-tertiary-200: rgba(234, 77, 75, 0.25);
+  --brand-tertiary-500: #f59b9a;
+  --brand-tertiary-600: #f59b9a;
+  --brand-tertiary-700: #fbc7c6;
+
+  --brand-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+  --brand-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --brand-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.50);
+  --brand-shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.55);
+  --brand-shadow-glow-primary: 0 8px 24px rgba(168, 207, 69, 0.18);
+
+  --brand-gradient-card:           linear-gradient(180deg, #141414 0%, #1d250a 100%);
+  --brand-gradient-primary-light:  linear-gradient(135deg, rgba(168,207,69,0.20) 0%, rgba(168,207,69,0.40) 100%);
+  --brand-gradient-glass:          linear-gradient(135deg, rgba(168,207,69,0.14) 0%, rgba(168,207,69,0.04) 100%);
+  --brand-gradient-radial-primary: radial-gradient(ellipse at top left, rgba(168,207,69,0.18) 0%, transparent 60%);
+}
