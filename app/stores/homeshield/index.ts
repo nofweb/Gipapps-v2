@@ -9,6 +9,9 @@ import type {
   HomeshieldDashboardData,
   HomeshieldDashboardResponse,
   HomeshieldDashboardParams,
+  HomeshieldSearchParams,
+  HomeshieldSearchResponse,
+  HomeshieldRenewResponse,
 } from '~/types/homeshield'
 
 export interface HomeshieldProperty {
@@ -49,6 +52,15 @@ interface HomeshieldState {
   dashboard: HomeshieldDashboardData | null
   dashboardLoading: boolean
   dashboardError: string | null
+
+  searchResults: HomeshieldPolicy[]
+  searchLoading: boolean
+  searchError: string | null
+  searchPerformed: boolean
+
+  renewLoading: boolean
+  renewError: string | null
+  renewingId: number | string | null
 }
 
 export interface SectorOption {
@@ -91,6 +103,15 @@ export const useHomeshieldStore = defineStore('homeshield', {
     dashboard: null,
     dashboardLoading: false,
     dashboardError: null,
+
+    searchResults: [],
+    searchLoading: false,
+    searchError: null,
+    searchPerformed: false,
+
+    renewLoading: false,
+    renewError: null,
+    renewingId: null,
   }),
 
   getters: {
@@ -197,6 +218,93 @@ export const useHomeshieldStore = defineStore('homeshield', {
       }
       finally {
         this.certificateLoading = false
+      }
+    },
+
+    async searchPolicy(params: HomeshieldSearchParams) {
+      this.searchLoading = true
+      this.searchError = null
+      try {
+        const api = useApi()
+        const cleaned: Record<string, string> = {}
+        for (const [k, v] of Object.entries(params)) {
+          if (v !== undefined && v !== null && String(v).trim() !== '') {
+            cleaned[k] = String(v).trim()
+          }
+        }
+        const { data } = await api.get<HomeshieldSearchResponse>(
+          '/home-shield/search-policy',
+          { params: cleaned },
+        )
+
+        let raw: unknown = data?.data
+        if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'data' in (raw as Record<string, unknown>)) {
+          raw = (raw as { data: unknown }).data
+        }
+        const list: HomeshieldPolicy[] = Array.isArray(raw)
+          ? (raw as HomeshieldPolicy[])
+          : raw
+            ? [raw as HomeshieldPolicy]
+            : []
+        this.searchResults = list
+        this.searchPerformed = true
+        return list
+      }
+      catch (err: unknown) {
+        let message = 'Search failed'
+        if (axios.isAxiosError(err)) {
+          const e = err as AxiosError<{ message?: string }>
+          message = e.response?.data?.message ?? e.message ?? message
+        }
+        else if (err instanceof Error) {
+          message = err.message
+        }
+        this.searchError = message
+        this.searchResults = []
+        this.searchPerformed = true
+        throw err
+      }
+      finally {
+        this.searchLoading = false
+      }
+    },
+
+    clearSearch() {
+      this.searchResults = []
+      this.searchError = null
+      this.searchPerformed = false
+    },
+
+    async renewPolicy(id: number | string) {
+      this.renewLoading = true
+      this.renewError = null
+      this.renewingId = id
+      try {
+        const api = useApi()
+        const { data } = await api.post<HomeshieldRenewResponse>(
+          `/home-shield/renew-policy/${id}`,
+        )
+        const renewed = data?.data && typeof data.data === 'object' && 'policy' in (data.data as Record<string, unknown>)
+          ? (data.data as { policy: HomeshieldPolicy }).policy
+          : (data?.data as HomeshieldPolicy | null)
+        if (renewed?.id) this.policyById[renewed.id] = renewed
+        return renewed
+      }
+      catch (err: unknown) {
+        let message = 'Renewal failed'
+        if (axios.isAxiosError(err)) {
+          const e = err as AxiosError<{ message?: string }>
+          message = e.response?.data?.message ?? e.message ?? message
+        }
+        else if (err instanceof Error) {
+          message = err.message
+        }
+        this.renewError = message
+        throw err
+      }
+      finally {
+        this.renewLoading = false
+        this.renewingId = null
       }
     },
 

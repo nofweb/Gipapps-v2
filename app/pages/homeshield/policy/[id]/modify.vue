@@ -42,7 +42,7 @@ const form = reactive<HomeshieldModifyPayload>({
   owner_type: 'tenant',
   first_name: '',
   last_name: '',
-  company_name: null,
+  company_name: '',
   email: '',
   contact_address: '',
   phone_number: '',
@@ -64,7 +64,7 @@ function hydrateFromPolicy() {
   form.owner_type = (p.owner_type?.toLowerCase() as 'tenant' | 'landlord') || 'tenant'
   form.first_name = p.first_name ?? ''
   form.last_name = p.last_name ?? ''
-  form.company_name = p.company_name ?? null
+  form.company_name = p.company_name ?? ''
   form.email = p.email ?? ''
   form.contact_address = p.contact_address ?? ''
   form.phone_number = p.phone_number ?? ''
@@ -139,13 +139,13 @@ async function save() {
     return
   }
   try {
-    await homeshield.modifyPolicy(id.value, {
-      ...form,
-      // For individual policies, ensure company_name is null and vice versa.
-      first_name: isCorporate.value ? '' : form.first_name,
-      last_name: isCorporate.value ? '' : form.last_name,
-      company_name: isCorporate.value ? form.company_name : null,
-    })
+    // Omit name fields that don't apply to the holder type.
+    const { first_name, last_name, company_name, ...rest } = form
+    const payload = isCorporate.value
+      ? { ...rest, company_name: company_name ?? '' }
+      : { ...rest, first_name, last_name }
+
+    await homeshield.modifyPolicy(id.value, payload)
     toast.success('Policy updated successfully')
     await navigateTo(`/homeshield/policy/${id.value}`)
   }

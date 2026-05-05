@@ -128,6 +128,14 @@ export const useHomeshieldApplicationStore = defineStore('homeshield-application
         this.verified = false
         this.verifyError = null
         this.identificationNumber = ''
+        // Wipe the opposite-side name fields so they can never leak.
+        if (t === 'corporate') {
+          this.firstName = ''
+          this.lastName = ''
+        }
+        else {
+          this.companyName = ''
+        }
       }
       this.holderType = t
       this.identificationType = t === 'corporate' ? 'rc_number' : 'nin'
@@ -255,12 +263,14 @@ export const useHomeshieldApplicationStore = defineStore('homeshield-application
         details: q.details.trim() ? q.details.trim() : null,
       }))
 
+      const isCorporate = this.holderType === 'corporate'
+
       return {
         holder_type: this.holderType ?? 'individual',
         owner_type: this.ownerType ?? 'landlord',
-        first_name: this.holderType === 'corporate' ? '' : this.firstName,
-        last_name: this.holderType === 'corporate' ? '' : this.lastName,
-        company_name: this.holderType === 'corporate' ? this.companyName : null,
+        ...(isCorporate
+          ? { company_name: this.companyName }
+          : { first_name: this.firstName, last_name: this.lastName }),
         email: this.email.trim(),
         contact_address: this.contactAddress.trim(),
         phone_number: this.phoneNumber.trim(),

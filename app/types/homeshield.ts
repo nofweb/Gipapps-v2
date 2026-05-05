@@ -85,9 +85,12 @@ export interface HomeshieldQuestionnaireAnswerInput {
 export interface HomeshieldPurchasePayload {
   holder_type: 'individual' | 'corporate'
   owner_type: 'tenant' | 'landlord'
-  first_name: string
-  last_name: string
-  company_name?: string | null
+  /** Only sent for individual holders. */
+  first_name?: string
+  /** Only sent for individual holders. */
+  last_name?: string
+  /** Only sent for corporate holders. */
+  company_name?: string
   email: string
   contact_address: string
   phone_number: string
@@ -115,9 +118,12 @@ export interface HomeshieldModifyPayload {
   purpose: string
   holder_type: 'individual' | 'corporate'
   owner_type: 'tenant' | 'landlord'
-  first_name: string
-  last_name: string
-  company_name?: string | null
+  /** Only sent for individual holders. */
+  first_name?: string
+  /** Only sent for individual holders. */
+  last_name?: string
+  /** Only sent for corporate holders. */
+  company_name?: string
   email: string
   contact_address: string
   phone_number: string
@@ -182,4 +188,21 @@ export interface HomeshieldDashboardParams {
   filter?: 'week' | 'month' | 'year'
   month?: number
   year?: number
+}
+
+export interface HomeshieldSearchParams {
+  policy_number?: string
+  insured_name?: string
+}
+
+export interface HomeshieldSearchResponse {
+  status: string
+  message: string
+  data: HomeshieldPolicy | HomeshieldPolicy[] | { data: HomeshieldPolicy[] } | null
+}
+
+export interface HomeshieldRenewResponse {
+  status: string
+  message: string
+  data: HomeshieldPolicy | { policy: HomeshieldPolicy } | null
 }
