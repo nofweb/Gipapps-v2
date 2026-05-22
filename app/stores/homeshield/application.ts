@@ -265,12 +265,12 @@ export const useHomeshieldApplicationStore = defineStore('homeshield-application
 
       const isCorporate = this.holderType === 'corporate'
 
-      return {
+      const payload: HomeshieldPurchasePayload = {
         holder_type: this.holderType ?? 'individual',
         owner_type: this.ownerType ?? 'landlord',
-        ...(isCorporate
-          ? { company_name: this.companyName }
-          : { first_name: this.firstName, last_name: this.lastName }),
+        first_name: isCorporate ? '' : this.firstName.trim(),
+        last_name: isCorporate ? '' : this.lastName.trim(),
+        company_name: isCorporate ? this.companyName.trim() : '',
         email: this.email.trim(),
         contact_address: this.contactAddress.trim(),
         phone_number: this.phoneNumber.trim(),
@@ -282,9 +282,12 @@ export const useHomeshieldApplicationStore = defineStore('homeshield-application
         property_type: this.propertyType ?? 'residential',
         category: this.category ?? 'Category A',
         payment_method: this.paymentMethod ?? 'WALLET',
-        ...(transactionReference ? { transaction_reference: transactionReference } : {}),
         questionnaire_answers: answers,
       }
+
+      if (transactionReference) payload.transaction_reference = transactionReference
+
+      return payload
     },
 
     async purchase(transactionReference?: string) {

@@ -133,17 +133,44 @@ function validate(): boolean {
   return Object.keys(e).length === 0
 }
 
+// When holder type flips, clear the opposite-side name fields immediately.
+watch(() => form.holder_type, (t) => {
+  if (t === 'corporate') {
+    form.first_name = ''
+    form.last_name = ''
+  }
+  else {
+    form.company_name = ''
+  }
+})
+
 async function save() {
   if (!validate()) {
     toast.warning('Please fix the highlighted fields')
     return
   }
   try {
-    // Omit name fields that don't apply to the holder type.
-    const { first_name, last_name, company_name, ...rest } = form
-    const payload = isCorporate.value
-      ? { ...rest, company_name: company_name ?? '' }
-      : { ...rest, first_name, last_name }
+    const corp = isCorporate.value
+    const payload: HomeshieldModifyPayload = {
+      purpose: form.purpose.trim(),
+      holder_type: form.holder_type,
+      owner_type: form.owner_type,
+      first_name: corp ? '' : (form.first_name ?? '').trim(),
+      last_name: corp ? '' : (form.last_name ?? '').trim(),
+      company_name: corp ? (form.company_name ?? '').trim() : '',
+      email: form.email.trim(),
+      contact_address: form.contact_address.trim(),
+      phone_number: form.phone_number.trim(),
+      identification_number: form.identification_number.trim(),
+      upload_id: form.upload_id ?? null,
+      sector: form.sector,
+      upload_property_photo: form.upload_property_photo ?? null,
+      property_address: form.property_address.trim(),
+      value_of_property: form.value_of_property,
+      property_type: form.property_type,
+      property_Kind: form.property_Kind,
+      category: form.category,
+    }
 
     await homeshield.modifyPolicy(id.value, payload)
     toast.success('Policy updated successfully')

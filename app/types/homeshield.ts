@@ -85,12 +85,12 @@ export interface HomeshieldQuestionnaireAnswerInput {
 export interface HomeshieldPurchasePayload {
   holder_type: 'individual' | 'corporate'
   owner_type: 'tenant' | 'landlord'
-  /** Only sent for individual holders. */
-  first_name?: string
-  /** Only sent for individual holders. */
-  last_name?: string
-  /** Only sent for corporate holders. */
-  company_name?: string
+  /** Empty string for corporate holders. */
+  first_name: string
+  /** Empty string for corporate holders. */
+  last_name: string
+  /** Empty string for individual holders. */
+  company_name: string
   email: string
   contact_address: string
   phone_number: string
@@ -118,12 +118,12 @@ export interface HomeshieldModifyPayload {
   purpose: string
   holder_type: 'individual' | 'corporate'
   owner_type: 'tenant' | 'landlord'
-  /** Only sent for individual holders. */
-  first_name?: string
-  /** Only sent for individual holders. */
-  last_name?: string
-  /** Only sent for corporate holders. */
-  company_name?: string
+  /** Empty string for corporate holders. */
+  first_name: string
+  /** Empty string for corporate holders. */
+  last_name: string
+  /** Empty string for individual holders. */
+  company_name: string
   email: string
   contact_address: string
   phone_number: string
