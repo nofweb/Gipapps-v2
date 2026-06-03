@@ -3,5 +3,5 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 </script>
 
 <template>
-  <MotorBuyShell variant="comprehensive" />
+  <MotorBuyShell variant="motor_protect_extra__own_goods" />
 </template>

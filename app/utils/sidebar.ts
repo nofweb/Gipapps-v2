@@ -28,10 +28,16 @@ export interface SidebarItem {
   defaultOpen?: boolean
 }
 
+/**
+ * A second-level entry. May either be a plain link or — when `children` is
+ * provided — a nested expandable group.
+ */
 export interface SidebarChild {
   label: string
-  to: string
+  to?: string
   badge?: string | number
+  children?: SidebarChild[]
+  defaultOpen?: boolean
 }
 
 export interface SidebarSection {
@@ -59,7 +65,10 @@ export const SIDEBAR_BY_PRODUCT: Record<ProductId, SidebarSection[]> = {
           defaultOpen: true,
           children: [
             { label: 'My policies', to: '/motor/comprehensive/my-policies' },
-            { label: 'Buy policy', to: '/motor/comprehensive/buy' },
+            { label: 'Buy Comprehensive', to: '/motor/comprehensive/buy' },
+            { label: 'Buy EZ Drive', to: '/motor/ez-drive/buy' },
+            { label: 'Buy EZ Drive Plus', to: '/motor/ez-drive-plus/buy' },
+            { label: 'Buy EZ Drive Elite', to: '/motor/ez-drive-elite/buy' },
             { label: 'Renew policy', to: '/motor/comprehensive/renew' },
           ],
         },
@@ -68,7 +77,10 @@ export const SIDEBAR_BY_PRODUCT: Record<ProductId, SidebarSection[]> = {
           icon: FileText,
           children: [
             { label: 'My policies', to: '/motor/third-party/my-policies' },
-            { label: 'Buy policy', to: '/motor/third-party/buy' },
+            { label: 'Buy Third Party', to: '/motor/third-party/buy' },
+            { label: 'Buy MPE Private Motor', to: '/motor/mpe-private-motor/buy' },
+            { label: 'Buy MPE Private Bus', to: '/motor/mpe-private-bus/buy' },
+            { label: 'Buy MPE Own Goods', to: '/motor/mpe-own-goods/buy' },
             { label: 'Renew policy', to: '/motor/third-party/renew' },
           ],
         },

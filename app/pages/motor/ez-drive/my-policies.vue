@@ -5,8 +5,9 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 <template>
   <MotorPoliciesList
     family="comprehensive"
-    category="Motor · Comprehensive"
-    subtitle="All your comprehensive motor policies, ordered by most recent."
-    buy-href="/motor/comprehensive/buy"
+    variance="EZ Drive"
+    category="Motor · EZ Drive"
+    subtitle="All your EZ Drive policies, ordered by most recent."
+    buy-href="/motor/ez-drive/buy"
   />
 </template>

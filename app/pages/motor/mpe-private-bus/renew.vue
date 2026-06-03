@@ -4,8 +4,9 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 
 <template>
   <MotorRenewSearch
-    family="comprehensive"
-    category="Motor · Comprehensive"
+    family="third_party"
+    variance="Motor Protect Extra (Private Bus)"
+    category="Motor · MPE Private Bus"
     subtitle="Search by policy number or insured name, then renew with one click."
   />
 </template>

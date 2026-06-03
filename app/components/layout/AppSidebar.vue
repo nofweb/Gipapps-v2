@@ -2,7 +2,7 @@
 import { ChevronRight, ChevronDown, X } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useProductsStore } from '~/stores/products'
-import { SIDEBAR_BY_PRODUCT, type SidebarItem } from '~/utils/sidebar'
+import { SIDEBAR_BY_PRODUCT, type SidebarItem, type SidebarChild } from '~/utils/sidebar'
 import { findProduct } from '~/utils/products'
 
 defineProps<{ mobileOpen: boolean }>()
@@ -15,22 +15,40 @@ const route = useRoute()
 const sections = computed(() => SIDEBAR_BY_PRODUCT[activeProduct.value])
 const product = computed(() => findProduct(activeProduct.value)!)
 
+function childContainsActive(child: SidebarChild): boolean {
+  if (child.to && route.path.startsWith(child.to)) return true
+  return child.children?.some(c => childContainsActive(c)) ?? false
+}
+
 function isItemActive(item: SidebarItem): boolean {
   if (item.to) return route.path === item.to
   if (item.children?.length) {
-    return item.children.some(c => route.path.startsWith(c.to))
+    return item.children.some(c => childContainsActive(c))
   }
   return !!item.active
 }
 
 const openGroups = ref<Set<string>>(new Set())
 
+function autoExpandChildren(parentKey: string, children: SidebarChild[] | undefined) {
+  if (!children?.length) return
+  for (const child of children) {
+    const key = `${parentKey} > ${child.label}`
+    if (child.children?.length) {
+      const containsActive = child.children.some(c => childContainsActive(c))
+      if (containsActive || child.defaultOpen) openGroups.value.add(key)
+      autoExpandChildren(key, child.children)
+    }
+  }
+}
+
 watchEffect(() => {
   for (const section of sections.value) {
     for (const item of section.items) {
       if (item.children?.length) {
-        const containsActive = item.children.some(c => route.path.startsWith(c.to))
+        const containsActive = item.children.some(c => childContainsActive(c))
         if (containsActive || item.defaultOpen) openGroups.value.add(item.label)
+        autoExpandChildren(item.label, item.children)
       }
     }
   }
@@ -40,7 +58,6 @@ function toggleGroup(label: string) {
   if (openGroups.value.has(label)) openGroups.value.delete(label)
   else openGroups.value.add(label)
 }
-
 </script>
 
 <template>
@@ -94,7 +111,7 @@ function toggleGroup(label: string) {
         </p>
         <ul class="space-y-1">
           <li v-for="item in section.items" :key="item.label">
-            <!-- Group with children -->
+            <!-- Top-level group with children -->
             <template v-if="item.children?.length">
               <button
                 type="button"
@@ -129,15 +146,66 @@ function toggleGroup(label: string) {
                 class="ml-4 mt-1 space-y-1 border-l border-secondary-100 pl-3"
               >
                 <li v-for="child in item.children" :key="child.label">
+                  <!-- Nested group (2nd level) -->
+                  <template v-if="child.children?.length">
+                    <button
+                      type="button"
+                      :aria-expanded="openGroups.has(`${item.label} > ${child.label}`)"
+                      :class="[
+                        'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors cursor-pointer',
+                        childContainsActive(child)
+                          ? 'bg-primary-50 text-primary-900'
+                          : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900',
+                      ]"
+                      @click="toggleGroup(`${item.label} > ${child.label}`)"
+                    >
+                      <span class="flex-1 text-left">{{ child.label }}</span>
+                      <ChevronDown
+                        :class="[
+                          'size-3.5 shrink-0 transition-transform duration-200',
+                          openGroups.has(`${item.label} > ${child.label}`) ? 'rotate-0' : '-rotate-90',
+                          childContainsActive(child) ? 'text-primary-700' : 'text-secondary-400',
+                        ]"
+                      />
+                    </button>
+
+                    <ul
+                      v-show="openGroups.has(`${item.label} > ${child.label}`)"
+                      class="ml-3 mt-1 space-y-1 border-l border-secondary-100 pl-3"
+                    >
+                      <li v-for="grand in child.children" :key="grand.label">
+                        <NuxtLink
+                          v-if="grand.to"
+                          :to="grand.to"
+                          :class="[
+                            'flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition-colors',
+                            route.path === grand.to
+                              ? 'bg-primary-50 text-primary-900 font-semibold'
+                              : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900',
+                          ]"
+                        >
+                          <span class="flex-1">{{ grand.label }}</span>
+                          <span
+                            v-if="grand.badge !== undefined"
+                            class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary-100 px-1.5 text-[10px] font-semibold text-secondary-700"
+                          >
+                            {{ grand.badge }}
+                          </span>
+                        </NuxtLink>
+                      </li>
+                    </ul>
+                  </template>
+
+                  <!-- Plain leaf link -->
                   <NuxtLink
+                    v-else-if="child.to"
                     :to="child.to"
                     :class="[
                       'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors',
-                      route.path.startsWith(child.to)
+                      route.path === child.to
                         ? 'bg-primary-50 text-primary-900 font-semibold'
                         : 'text-secondary-600 hover:bg-secondary-50 hover:text-secondary-900',
                     ]"
-                    @click="navigate"
                   >
                     <span class="flex-1">{{ child.label }}</span>
                     <span
