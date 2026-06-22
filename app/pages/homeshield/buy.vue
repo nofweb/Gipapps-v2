@@ -8,6 +8,7 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 const app = useHomeshieldApplicationStore()
 const { step } = storeToRefs(app)
 
+
 const STEPS = [
   { number: 1, label: 'Category' },
   { number: 2, label: 'Holder' },
