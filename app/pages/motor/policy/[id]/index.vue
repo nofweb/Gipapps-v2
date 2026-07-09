@@ -14,8 +14,9 @@ import {
   Car,
   Download,
   Printer,
+  Pencil,
 } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import { useMotorStore } from '~/stores/motor'
 import { formatNaira, formatDate } from '~/utils/format'
 import { familyForVariance } from '~/utils/motor-constants'
@@ -34,7 +35,7 @@ const familyHint = computed<MotorPolicyFamily | undefined>(() => {
 })
 
 const motor = useMotorStore()
-const { policyById, policyDetailLoading, policyDetailError, certificateLoading } = storeToRefs(motor)
+const { policyById, policyDetailLoading, policyDetailError, printLoading, downloadLoading } = storeToRefs(motor)
 
 const policy = computed(() => policyById.value[id.value])
 
@@ -42,6 +43,20 @@ const policy = computed(() => policyById.value[id.value])
 const resolvedFamily = computed<MotorPolicyFamily | undefined>(() =>
   familyHint.value ?? familyForVariance(policy.value?.variance) ?? undefined,
 )
+
+/**
+ * Whether this policy is third-party. Only the comprehensive (EZ Drive) family
+ * uses the /variance/certificate endpoint; everything else — plain third party
+ * and all Motor Protect Extra variants — is served from /customer/certificate.
+ * We treat "not comprehensive" as third-party so an unmatched variance or a
+ * missing family hint still resolves to the correct endpoint.
+ */
+const isThirdParty = computed(() => {
+  if (resolvedFamily.value === 'third_party') return true
+  if (resolvedFamily.value === 'comprehensive') return false
+  const variance = (policy.value?.variance ?? '').toLowerCase()
+  return !(variance.includes('comprehensive') || variance.includes('ez'))
+})
 
 await motor.fetchPolicy(id.value, familyHint.value).catch(() => {})
 
@@ -55,7 +70,7 @@ async function printCertificate() {
     return
   }
   try {
-    await motor.printCertificate(policy.value.certificate_number)
+    await motor.printCertificate(policy.value.certificate_number, isThirdParty.value)
   }
   catch (err) {
     toast.error(err instanceof Error ? err.message : 'Could not print certificate')
@@ -68,7 +83,7 @@ async function downloadCertificate() {
     return
   }
   try {
-    await motor.downloadCertificate(policy.value.certificate_number)
+    await motor.downloadCertificate(policy.value.certificate_number, isThirdParty.value)
     toast.success('Certificate downloaded')
   }
   catch (err) {
@@ -94,6 +109,11 @@ function statusClass(status: string) {
     return 'bg-tertiary-50 text-tertiary-600'
   return 'bg-secondary-100 text-secondary-700'
 }
+
+const modifyHref = computed(() => {
+  const family = resolvedFamily.value
+  return `/motor/policy/${id.value}/modify${family ? `?family=${family}` : ''}`
+})
 
 const backHref = computed(() => {
   const family = resolvedFamily.value
@@ -150,14 +170,21 @@ function derivedStatus(p: { status?: string; expiration_date?: string; is_redeem
           <RefreshCw :class="['size-4', policyDetailLoading && 'animate-spin']" />
           Refresh
         </button>
+        <NuxtLink
+          v-if="policy"
+          :to="modifyHref"
+          class="btn-ghost border border-secondary-100 text-sm"
+        >
+          <Pencil class="size-4" /> Modify policy
+        </NuxtLink>
         <button
           type="button"
           class="btn-ghost border border-secondary-100 text-sm"
-          :disabled="certificateLoading || !policy?.certificate_number"
+          :disabled="printLoading || !policy?.certificate_number"
           @click="printCertificate"
         >
           <span
-            v-if="certificateLoading"
+            v-if="printLoading"
             class="size-4 rounded-full border-2 border-current border-t-transparent animate-spin"
             aria-hidden="true"
           />
@@ -166,11 +193,11 @@ function derivedStatus(p: { status?: string; expiration_date?: string; is_redeem
         <button
           type="button"
           class="btn-primary text-sm"
-          :disabled="certificateLoading || !policy?.certificate_number"
+          :disabled="downloadLoading || !policy?.certificate_number"
           @click="downloadCertificate"
         >
           <span
-            v-if="certificateLoading"
+            v-if="downloadLoading"
             class="size-4 rounded-full border-2 border-current border-t-transparent animate-spin"
             aria-hidden="true"
           />
@@ -401,6 +428,10 @@ function derivedStatus(p: { status?: string; expiration_date?: string; is_redeem
               <h2 class="text-base font-semibold text-secondary-900">References</h2>
             </header>
             <dl class="space-y-4 text-sm">
+              <div v-if="policy.variance">
+                <dt class="text-xs text-secondary-500">Variant</dt>
+                <dd class="mt-0.5 font-medium text-secondary-900">{{ policy.variance }}</dd>
+              </div>
               <div>
                 <dt class="text-xs text-secondary-500">Policy number</dt>
                 <dd class="mt-0.5 font-mono text-xs font-medium text-secondary-900 break-all">{{ policy.policy_number }}</dd>

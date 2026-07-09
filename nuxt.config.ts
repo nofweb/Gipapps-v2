@@ -15,7 +15,7 @@ export default defineNuxtConfig({
     storesDirs: ['./app/stores/**'],
   },
 
-  css: ['~/assets/css/main.css'],
+  css: ['~/assets/css/main.css', 'vue3-toastify/dist/index.css'],
 
   components: {
     dirs: [

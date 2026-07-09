@@ -42,6 +42,12 @@ const {
 
 const isThirdParty = computed(() => props.family === 'third_party')
 
+/**
+ * Show the Variant column on the generic comprehensive list. Single-variant
+ * pages (which pass a `variance` prop) omit it since every row is identical.
+ */
+const showVariant = computed(() => props.family === 'comprehensive' && !props.variance)
+
 /** Variance strings (lowercased) that belong to the page's family. */
 const familyVariances = computed(() =>
   new Set(variantsForFamily(props.family).map(v => v.displayName.toLowerCase())),
@@ -368,6 +374,7 @@ async function goToPage(page: number) {
           <thead class="bg-secondary-50 text-left text-xs font-semibold uppercase tracking-wider text-secondary-500">
             <tr>
               <th class="px-4 py-3">Policy number</th>
+              <th v-if="showVariant" class="px-4 py-3">Variant</th>
               <th class="px-4 py-3">Holder</th>
               <th class="px-4 py-3">Vehicle</th>
               <th class="px-4 py-3">Registration</th>
@@ -386,6 +393,9 @@ async function goToPage(page: number) {
               <td class="px-4 py-4">
                 <p class="font-semibold text-secondary-900">{{ policy.policy_number }}</p>
                 <p class="text-xs text-secondary-500">{{ policy.certificate_number }}</p>
+              </td>
+              <td v-if="showVariant" class="px-4 py-4 text-secondary-700">
+                {{ policy.variance || '—' }}
               </td>
               <td class="px-4 py-4">
                 <p class="font-medium text-secondary-900">{{ holderName(policy) }}</p>

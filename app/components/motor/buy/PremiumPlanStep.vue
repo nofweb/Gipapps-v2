@@ -8,9 +8,20 @@ import {
   CheckCircle2,
   Loader2,
   AlertTriangle,
+  ShieldAlert,
+  X,
 } from 'lucide-vue-next'
+import {
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import { useMotorApplicationStore } from '~/stores/motor/application'
 import { PREMIUM_TYPE_DESCRIPTIONS } from '~/utils/motor-constants'
 import type { MotorPremiumQuote, MotorPremiumType } from '~/types/motor'
@@ -40,6 +51,34 @@ const options = computed<PlanOption[]>(() => {
 const quotes = reactive<Partial<Record<MotorPremiumType, MotorPremiumQuote>>>({})
 const loadingPlan = ref<MotorPremiumType | null>(null)
 const error = ref<string | null>(null)
+
+// Half-yearly & quarterly are instalment plans — claims are not admissible
+// until the full premium is paid, so the customer must accept a disclaimer first.
+const INSTALMENT_PLANS: MotorPremiumType[] = ['HALF_YEARLY', 'QUARTERLY']
+const disclaimerOpen = ref(false)
+const pendingPlan = ref<MotorPremiumType | null>(null)
+
+function handleSelect(plan: MotorPremiumType) {
+  if (INSTALMENT_PLANS.includes(plan)) {
+    pendingPlan.value = plan
+    disclaimerOpen.value = true
+    return
+  }
+  void selectPlan(plan)
+}
+
+function acceptDisclaimer() {
+  disclaimerOpen.value = false
+  if (pendingPlan.value) {
+    void selectPlan(pendingPlan.value)
+    pendingPlan.value = null
+  }
+}
+
+function declineDisclaimer() {
+  disclaimerOpen.value = false
+  pendingPlan.value = null
+}
 
 async function selectPlan(plan: MotorPremiumType) {
   error.value = null
@@ -125,7 +164,7 @@ function proceed() {
               ? 'border-primary bg-primary-50 shadow-glow-primary'
               : 'border-secondary-100 bg-card hover:border-primary-200 hover:bg-primary-50/40',
           ]"
-          @click="selectPlan(opt.value)"
+          @click="handleSelect(opt.value)"
         >
           <div class="flex items-start justify-between gap-3">
             <div
@@ -169,5 +208,62 @@ function proceed() {
         Continue <ArrowRight class="size-4" />
       </button>
     </div>
+
+    <DialogRoot v-model:open="disclaimerOpen">
+      <DialogPortal>
+        <DialogOverlay
+          class="fixed inset-0 z-50 bg-secondary-900/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0"
+        />
+        <DialogContent
+          class="fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-3xl border border-secondary-100 bg-card shadow-2xl focus:outline-none data-[state=open]:animate-scale-in"
+          @escape-key-down="declineDisclaimer"
+          @pointer-down-outside="declineDisclaimer"
+        >
+          <div class="relative overflow-hidden bg-gradient-to-br from-warning/20 to-warning/5 px-6 pt-6 pb-5">
+            <div class="absolute -right-10 -top-10 size-32 rounded-full bg-card/40 blur-3xl" aria-hidden="true" />
+            <div class="relative flex items-center gap-3">
+              <div class="flex size-12 items-center justify-center rounded-2xl bg-warning text-white shadow-lg">
+                <ShieldAlert class="size-6" />
+              </div>
+              <div class="min-w-0">
+                <DialogTitle class="text-lg font-bold leading-tight text-secondary-900">
+                  Instalment payment notice
+                </DialogTitle>
+                <DialogDescription class="mt-0.5 text-xs text-secondary-600">
+                  Please read and accept before continuing.
+                </DialogDescription>
+              </div>
+            </div>
+            <DialogClose
+              class="absolute right-3 top-3 flex size-8 items-center justify-center rounded-xl text-secondary-500 hover:bg-card/60 hover:text-secondary-800 cursor-pointer"
+              aria-label="Close"
+              @click="declineDisclaimer"
+            >
+              <X class="size-4" />
+            </DialogClose>
+          </div>
+
+          <div class="space-y-4 px-6 py-5">
+            <p class="rounded-2xl border border-warning/20 bg-warning/10 px-4 py-3 text-sm leading-relaxed text-secondary-800">
+              Claims shall not be admissible until the full premium has been paid, in
+              accordance with the Company's underwriting requirements.
+            </p>
+
+            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                class="btn-ghost border border-secondary-100"
+                @click="declineDisclaimer"
+              >
+                Cancel
+              </button>
+              <button type="button" class="btn-primary" @click="acceptDisclaimer">
+                <CheckCircle2 class="size-4" /> I understand & accept
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </DialogPortal>
+    </DialogRoot>
   </div>
 </template>

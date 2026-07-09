@@ -61,6 +61,7 @@ interface MotorApplicationState {
   engineNumber: string
   vehicleColor: string
   vehicleType: MotorVehicleType | ''
+  vehiclePhotoUrl: string
 
   // Comprehensive only
   carValue: number | null
@@ -109,6 +110,7 @@ const defaults = (): MotorApplicationState => ({
   engineNumber: '',
   vehicleColor: '',
   vehicleType: '',
+  vehiclePhotoUrl: '',
 
   carValue: null,
   premiumType: null,
@@ -280,7 +282,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
           message?: string
           name?: string
           data?: { name?: string; first_name?: string; last_name?: string; phone_number?: string; address?: string }
-        }>('/verifyid', { id_type, id_number })
+        }>('/verifyid', { id_type, id_number }, { skipSuccessToast: true, skipErrorToast: true })
 
         const verifiedFlag = data?.verified !== false && (data?.status ?? 'success') !== 'error'
         if (!verifiedFlag) {
@@ -355,7 +357,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
         car_value: String(this.carValue),
         registration_number: this.registrationNumber,
         premium_type: premiumType,
-      })
+      }, { skipSuccessToast: true, skipErrorToast: true })
       const raw = unwrapPremiumQuote(data)
       if (!raw || typeof raw.premium !== 'number') {
         throw new Error('Could not calculate premium.')
@@ -398,7 +400,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
             sector: this.sector || undefined,
           }
       try {
-        await api.post('/customer/save-contact', payload)
+        await api.post('/customer/save-contact', payload, { skipSuccessToast: true, skipErrorToast: true })
       }
       catch {
         // Best-effort; the buy-policy call carries the same data so we don't block.
@@ -430,7 +432,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
         payload.car_value = String(this.carValue)
       }
       try {
-        await api.post(endpoint, payload)
+        await api.post(endpoint, payload, { skipSuccessToast: true, skipErrorToast: true })
       }
       catch {
         // Best-effort.
@@ -461,6 +463,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
         year_of_make: this.yearOfMake ? String(this.yearOfMake) : '',
         vehicle_type: this.vehicleType || '',
         policy_type: toInsuranceClassCode(this.insuranceClass),
+        upload_vehicle_photo: this.vehiclePhotoUrl || undefined,
         sector: this.sector || undefined,
         payment_method: this.paymentMethod ?? 'PAYSTACK',
       }
@@ -495,7 +498,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
         const api = useApi()
         const payload = this.buildBuyPayload(transactionReference)
         const endpoint = familyEndpoint(meta.family)
-        const { data } = await api.post<MotorBuyPolicyResponse>(endpoint, payload)
+        const { data } = await api.post<MotorBuyPolicyResponse>(endpoint, payload, { skipSuccessToast: true, skipErrorToast: true })
         if (data?.status !== 'success' || !data?.data) {
           const message = data?.message ?? 'Failed to create policy.'
           this.submitError = message
@@ -549,6 +552,7 @@ export const useMotorApplicationStore = defineStore('motor-application', {
       'engineNumber',
       'vehicleColor',
       'vehicleType',
+      'vehiclePhotoUrl',
       'carValue',
       'premiumType',
       'paymentMethod',

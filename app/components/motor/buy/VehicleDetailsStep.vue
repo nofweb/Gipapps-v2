@@ -6,11 +6,15 @@ import {
   CheckCircle2,
   Search,
   Loader2,
+  UploadCloud,
+  FileText,
+  X,
 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import { useMotorApplicationStore } from '~/stores/motor/application'
 import { useMotorStore } from '~/stores/motor'
+import { useUpload } from '~/composables/useUpload'
 import {
   getVehicleTypesForClass,
   toInsuranceClassCode,
@@ -39,12 +43,57 @@ const {
   engineNumber,
   vehicleColor,
   vehicleType,
+  vehiclePhotoUrl,
   carValue,
   isComprehensive,
   variantMeta,
 } = storeToRefs(app)
 
 const errors = ref<Record<string, string>>({})
+
+// --- Vehicle photo upload (optional) -----------------------------------------
+const { uploadFile } = useUpload()
+const photoInput = ref<HTMLInputElement | null>(null)
+const photoUploading = ref(false)
+const photoError = ref('')
+const photoFileName = ref('')
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024
+
+function pickPhoto() {
+  photoInput.value?.click()
+}
+
+async function handlePhoto(file: File) {
+  photoError.value = ''
+  if (file.size > MAX_PHOTO_BYTES) {
+    photoError.value = 'File is larger than 5MB.'
+    return
+  }
+  photoFileName.value = file.name
+  photoUploading.value = true
+  try {
+    vehiclePhotoUrl.value = await uploadFile(file)
+  }
+  catch (err) {
+    photoError.value = err instanceof Error ? err.message : 'Upload failed. Please try again.'
+  }
+  finally {
+    photoUploading.value = false
+  }
+}
+
+function onPhotoChange(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file) void handlePhoto(file)
+  input.value = ''
+}
+
+function clearPhoto() {
+  vehiclePhotoUrl.value = ''
+  photoFileName.value = ''
+  photoError.value = ''
+}
 
 onMounted(() => {
   motor.fetchMakes().catch(() => {})
@@ -289,6 +338,82 @@ async function proceed() {
           </select>
           <p v-if="errors.vehicleType" class="mt-1 text-xs text-tertiary-500">{{ errors.vehicleType }}</p>
         </div>
+      </div>
+
+      <!-- Vehicle photo (optional) -->
+      <div>
+        <p class="input-label">Vehicle photo (optional)</p>
+
+        <!-- Empty / dropzone state -->
+        <button
+          v-if="!vehiclePhotoUrl && !photoUploading"
+          type="button"
+          class="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-secondary-200 px-6 py-8 transition-colors hover:border-primary-300 hover:bg-primary-50/40 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          @click="pickPhoto"
+        >
+          <span class="flex size-11 items-center justify-center rounded-xl bg-secondary-100 text-secondary-700">
+            <UploadCloud class="size-5" aria-hidden="true" />
+          </span>
+          <span class="text-sm font-medium text-secondary-900">
+            Click to <span class="text-primary-700 underline underline-offset-2">upload a photo</span>
+          </span>
+          <span class="text-xs text-secondary-500">PNG or JPG • up to 5MB</span>
+        </button>
+
+        <!-- Uploading / uploaded state -->
+        <div v-else class="rounded-2xl border border-secondary-100 bg-secondary-50 p-4">
+          <div class="flex items-start gap-3">
+            <span
+              :class="[
+                'flex size-9 shrink-0 items-center justify-center rounded-xl',
+                photoUploading ? 'bg-secondary-100 text-secondary-700' : 'bg-primary text-primary-foreground',
+              ]"
+            >
+              <Loader2 v-if="photoUploading" class="size-4 animate-spin" aria-hidden="true" />
+              <CheckCircle2 v-else-if="vehiclePhotoUrl" class="size-4" aria-hidden="true" />
+              <FileText v-else class="size-4" aria-hidden="true" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-medium text-secondary-900">
+                {{ photoFileName || (vehiclePhotoUrl ? vehiclePhotoUrl.split('/').pop() : 'Uploaded') }}
+              </p>
+              <p class="text-xs text-secondary-500">
+                <template v-if="photoUploading">Uploading…</template>
+                <template v-else-if="vehiclePhotoUrl">Uploaded successfully</template>
+              </p>
+            </div>
+            <button
+              v-if="!photoUploading"
+              type="button"
+              class="text-secondary-500 hover:text-tertiary-600 transition-colors cursor-pointer"
+              aria-label="Remove photo"
+              @click="clearPhoto"
+            >
+              <X class="size-4" />
+            </button>
+          </div>
+        </div>
+
+        <p v-if="photoError" class="mt-2 text-xs text-tertiary-500">{{ photoError }}</p>
+
+        <input
+          ref="photoInput"
+          type="file"
+          class="sr-only"
+          accept="image/png,image/jpeg"
+          @change="onPhotoChange"
+        >
+
+        <!-- Optional-photo disclaimer -->
+        <p v-if="!vehiclePhotoUrl" class="mt-2 text-xs leading-relaxed text-secondary-500">
+          Vehicle photo is optional. If not provided, we will contact you within 24–48 hours
+          for pre-loss inspection. Lack of availability for inspection may lead to policy cancellation.
+        </p>
+
+        <!-- Pre-loss inspection disclaimer -->
+        <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-relaxed text-secondary-800">
+          Insurance cover is subject to a pre-loss inspection
+        </p>
       </div>
 
       <!-- Comprehensive: Car value -->

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, ArrowRight, ShieldCheck, AlertTriangle, RotateCcw, Building2, Landmark } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import { useMotorApplicationStore } from '~/stores/motor/application'
 import { useMotorStore } from '~/stores/motor'
 import {

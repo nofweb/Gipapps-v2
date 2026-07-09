@@ -207,6 +207,8 @@ export interface MotorBuyPolicyBase {
   year_of_make: string
   vehicle_type: string
   policy_type: string
+  /** Optional uploaded vehicle photo URL (pre-loss inspection aid). */
+  upload_vehicle_photo?: string
   sector?: string
   transaction_reference?: string
   payment_method: MotorPaymentMethod
@@ -223,6 +225,45 @@ export type MotorBuyPolicyPayload =
   | MotorBuyComprehensivePayload
 
 export interface MotorBuyPolicyResponse {
+  status: string
+  message?: string
+  data?: MotorPolicy
+}
+
+/**
+ * Body for PUT /customer/modify/{id}. Carries the editable policy fields plus
+ * a required `modification_reason` describing why the change is requested.
+ */
+export interface MotorModifyPayload {
+  modification_reason: string
+  holder_type: MotorHolderType
+  variance: string
+  first_name?: string
+  surname?: string
+  company_name?: string
+  contact_address: string
+  phone_number: string
+  email: string
+  identification: string
+  id_number: string
+  upload_id?: string
+  sector?: string
+  registration_number: string
+  vehicle_make_id: string
+  vehicle_model_id: string
+  chasis_number: string
+  engine_number: string
+  vehicle_color: string
+  year_of_make: string
+  vehicle_type: string
+  policy_type: string
+  /** Comprehensive only. */
+  car_value?: number
+  /** Comprehensive only. */
+  premium_type?: MotorPremiumType
+}
+
+export interface MotorModifyResponse {
   status: string
   message?: string
   data?: MotorPolicy

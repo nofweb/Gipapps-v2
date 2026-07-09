@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import {
   DialogRoot,
   DialogPortal,

@@ -8,7 +8,7 @@ import {
   ShieldCheck,
 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { toast } from 'vue-sonner'
+import { toast } from 'vue3-toastify'
 import { useMotorApplicationStore } from '~/stores/motor/application'
 import { openPaystack } from '~/composables/usePaystack'
 import { formatNaira } from '~/utils/format'
@@ -52,7 +52,7 @@ function select(m: MotorPaymentMethod) {
 async function generateRef(): Promise<string> {
   try {
     const api = useApi()
-    const { data } = await api.post<unknown>('/wallet/generate-transaction-reference')
+    const { data } = await api.post<unknown>('/wallet/generate-transaction-reference', undefined, { skipSuccessToast: true, skipErrorToast: true })
     const extract = (body: unknown): string | null => {
       if (!body) return null
       if (typeof body === 'string') return body || null

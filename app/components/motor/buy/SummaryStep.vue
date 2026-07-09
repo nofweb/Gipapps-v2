@@ -186,6 +186,11 @@ const familyLabel = computed(() => {
       </dl>
     </section>
 
+    <!-- Pre-loss inspection disclaimer -->
+    <p class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-relaxed text-secondary-800">
+      Insurance cover is subject to a pre-loss inspection
+    </p>
+
     <div class="flex justify-between">
       <button type="button" class="btn-ghost border border-secondary-100" @click="app.prev()">
         <ArrowLeft class="size-4" /> Back

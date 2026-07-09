@@ -13,6 +13,8 @@ import type {
   MotorVehicleMake,
   MotorVerifyRegResponse,
   MotorPolicyFamily,
+  MotorModifyPayload,
+  MotorModifyResponse,
 } from '~/types/motor'
 
 export interface SectorOption {
@@ -54,7 +56,12 @@ interface MotorState {
   policyDetailError: string | null
 
   // Certificate
-  certificateLoading: boolean
+  printLoading: boolean
+  downloadLoading: boolean
+
+  // Modification
+  modifyLoading: boolean
+  modifyError: string | null
 
   // Sectors
   sectors: SectorOption[]
@@ -106,7 +113,11 @@ export const useMotorStore = defineStore('motor', {
     policyDetailLoading: false,
     policyDetailError: null,
 
-    certificateLoading: false,
+    printLoading: false,
+    downloadLoading: false,
+
+    modifyLoading: false,
+    modifyError: null,
 
     sectors: [],
     sectorsLoading: false,
@@ -239,11 +250,15 @@ export const useMotorStore = defineStore('motor', {
       }
     },
 
-    async fetchCertificateBlob(certificateNumber: string): Promise<Blob> {
+    async fetchCertificateBlob(certificateNumber: string, thirdParty = false): Promise<Blob> {
       const api = useApi()
-      const res = await api.get('/variance/print-certificate', {
+      // Third-party certificates are served from the customer endpoint; all other
+      // variances use the variance endpoint.
+      const endpoint = thirdParty ? '/customer/certificate' : '/variance/certificate'
+      const res = await api.get(endpoint, {
         params: { certificate_number: certificateNumber },
         responseType: 'blob',
+        skipErrorToast: true,
       })
       const data = res.data as Blob
       const type = data.type && data.type !== 'application/octet-stream'
@@ -252,31 +267,47 @@ export const useMotorStore = defineStore('motor', {
       return new Blob([data], { type })
     },
 
-    async printCertificate(certificateNumber: string) {
-      this.certificateLoading = true
+    async printCertificate(certificateNumber: string, thirdParty = false) {
+      this.printLoading = true
       try {
-        const blob = await this.fetchCertificateBlob(certificateNumber)
+        const blob = await this.fetchCertificateBlob(certificateNumber, thirdParty)
         const url = URL.createObjectURL(blob)
-        const win = window.open(url, '_blank', 'noopener,noreferrer')
-        if (win) {
-          const triggerPrint = () => {
-            try { win.focus(); win.print() }
-            catch { /* popup blocked or different origin */ }
-          }
-          win.addEventListener('load', triggerPrint, { once: true })
-          setTimeout(triggerPrint, 1500)
+        // Print via a hidden iframe rather than window.open(): the open happens
+        // after an await, so it's no longer tied to the click gesture and the
+        // browser's popup blocker would block it. A same-origin blob iframe
+        // prints reliably without a popup.
+        const iframe = document.createElement('iframe')
+        iframe.style.position = 'fixed'
+        iframe.style.right = '0'
+        iframe.style.bottom = '0'
+        iframe.style.width = '0'
+        iframe.style.height = '0'
+        iframe.style.border = '0'
+        iframe.src = url
+        const cleanup = () => {
+          iframe.remove()
+          URL.revokeObjectURL(url)
         }
-        setTimeout(() => URL.revokeObjectURL(url), 60_000)
+        iframe.onload = () => {
+          try {
+            iframe.contentWindow?.focus()
+            iframe.contentWindow?.print()
+          }
+          catch { /* printing unavailable in this environment */ }
+        }
+        document.body.appendChild(iframe)
+        // Keep the iframe alive long enough for the print dialog, then clean up.
+        setTimeout(cleanup, 60_000)
       }
       finally {
-        this.certificateLoading = false
+        this.printLoading = false
       }
     },
 
-    async downloadCertificate(certificateNumber: string) {
-      this.certificateLoading = true
+    async downloadCertificate(certificateNumber: string, thirdParty = false) {
+      this.downloadLoading = true
       try {
-        const blob = await this.fetchCertificateBlob(certificateNumber)
+        const blob = await this.fetchCertificateBlob(certificateNumber, thirdParty)
         const url = URL.createObjectURL(blob)
         const filename = `${certificateNumber.replace(/[\\/]+/g, '-')}.pdf`
         const a = document.createElement('a')
@@ -289,7 +320,31 @@ export const useMotorStore = defineStore('motor', {
         setTimeout(() => URL.revokeObjectURL(url), 5_000)
       }
       finally {
-        this.certificateLoading = false
+        this.downloadLoading = false
+      }
+    },
+
+    /**
+     * Submit a modification request for a policy.
+     * PUT /customer/modify/{id} with the editable policy fields plus a
+     * required `modification_reason`.
+     */
+    async modifyPolicy(id: number | string, payload: MotorModifyPayload) {
+      this.modifyLoading = true
+      this.modifyError = null
+      try {
+        const api = useApi()
+        const { data } = await api.put<MotorModifyResponse>(`/customer/modify/${id}`, payload, { skipSuccessToast: true, skipErrorToast: true })
+        const updated = data?.data
+        if (updated?.id) this.policyById[updated.id] = updated
+        return updated ?? null
+      }
+      catch (err: unknown) {
+        this.modifyError = pickMessage(err, 'Unable to submit modification')
+        throw err
+      }
+      finally {
+        this.modifyLoading = false
       }
     },
 
@@ -377,7 +432,7 @@ export const useMotorStore = defineStore('motor', {
         const endpoint = family === 'comprehensive'
           ? '/variance/ez-drive/search-policy'
           : '/variance/thirdparty/search-policy'
-        const { data } = await api.get<MotorSearchResponse>(endpoint, { params: cleaned })
+        const { data } = await api.get<MotorSearchResponse>(endpoint, { params: cleaned, skipErrorToast: true })
 
         let raw: unknown = data?.data
         if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'data' in (raw as Record<string, unknown>)) {
@@ -418,7 +473,7 @@ export const useMotorStore = defineStore('motor', {
         const endpoint = family === 'comprehensive'
           ? `/variance/ez-drive/renew-policy/${id}`
           : `/variance/thirdparty/renew-policy/${id}`
-        const { data } = await api.post<MotorRenewResponse>(endpoint)
+        const { data } = await api.post<MotorRenewResponse>(endpoint, undefined, { skipSuccessToast: true, skipErrorToast: true })
         const renewed = data?.data && typeof data.data === 'object' && 'policy' in (data.data as Record<string, unknown>)
           ? (data.data as { policy: MotorPolicy }).policy
           : (data?.data as MotorPolicy | null)
@@ -468,7 +523,7 @@ export const useMotorStore = defineStore('motor', {
       this.regVerifyData = null
       try {
         const api = useApi()
-        const { data } = await api.post<MotorVerifyRegResponse>('/verify-vehicle', { regNumber })
+        const { data } = await api.post<MotorVerifyRegResponse>('/verify-vehicle', { regNumber }, { skipSuccessToast: true, skipErrorToast: true })
         if (data?.status !== 'success' || !data.data?.make_detail?.id) {
           this.regVerifyError = data?.message ?? "We couldn't verify this registration."
           return null
