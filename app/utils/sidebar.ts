@@ -2,15 +2,9 @@ import {
   LayoutDashboard,
   FileText,
   ShieldCheck,
-  Receipt,
   RefreshCcw,
-  LifeBuoy,
-  Settings,
-  Wrench,
   FileCheck2,
   CreditCard,
-  ArrowLeftRight,
-  Wallet,
   Quote,
   type LucideIcon,
 } from 'lucide-vue-next'
@@ -43,15 +37,6 @@ export interface SidebarChild {
 export interface SidebarSection {
   heading?: string
   items: SidebarItem[]
-}
-
-const SHARED_BOTTOM: SidebarSection = {
-  heading: 'Account',
-  items: [
-    { label: 'Billing & invoices', icon: Receipt },
-    { label: 'Support', icon: LifeBuoy },
-    { label: 'Settings', icon: Settings },
-  ],
 }
 
 export const SIDEBAR_BY_PRODUCT: Record<ProductId, SidebarSection[]> = {
@@ -103,11 +88,8 @@ export const SIDEBAR_BY_PRODUCT: Record<ProductId, SidebarSection[]> = {
     {
       items: [
         { label: 'Dashboard', icon: LayoutDashboard, to: '/marine' },
-        { label: 'Certificates', icon: FileCheck2, to: '/marine/certificates' },
+        { label: 'My policies', icon: FileCheck2, to: '/marine/certificates' },
         { label: 'Payments', icon: CreditCard, to: '/marine/payments' },
-        { label: 'Claims', icon: Wrench, to: '/marine/claims' },
-        { label: 'Transactions', icon: ArrowLeftRight, to: '/marine/transactions' },
-        { label: 'Wallet', icon: Wallet, to: '/marine/wallet' },
         {
           label: 'Quotations',
           icon: Quote,
@@ -118,6 +100,5 @@ export const SIDEBAR_BY_PRODUCT: Record<ProductId, SidebarSection[]> = {
         },
       ],
     },
-    SHARED_BOTTOM,
   ],
 }
