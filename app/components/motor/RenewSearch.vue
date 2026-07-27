@@ -33,6 +33,8 @@ const props = defineProps<{
   subtitle: string
   /** When set, the search result list is filtered to entries whose `variance` matches. */
   variance?: string
+  /** Search by vehicle registration number instead of policy number / insured name. */
+  byRegistration?: boolean
 }>()
 
 const motor = useMotorStore()
@@ -52,15 +54,39 @@ const visibleResults = computed(() => {
   return searchResults.value.filter(p => (p.variance ?? '').toLowerCase() === target)
 })
 
-type SearchMode = 'policy_number' | 'insured_name'
-const mode = ref<SearchMode>('policy_number')
+type SearchMode = 'policy_number' | 'insured_name' | 'registration_number'
+const mode = ref<SearchMode>(props.byRegistration ? 'registration_number' : 'policy_number')
 const query = ref('')
+
+const searchModes = computed(() =>
+  props.byRegistration
+    ? [{ id: 'registration_number' as SearchMode, label: 'By registration number' }]
+    : [
+        { id: 'policy_number' as SearchMode, label: 'By policy number' },
+        { id: 'insured_name' as SearchMode, label: 'By insured name' },
+      ],
+)
+
+const modeLabel = computed(() => {
+  if (mode.value === 'registration_number') return 'Vehicle registration number'
+  return mode.value === 'policy_number' ? 'Policy number' : 'Insured name'
+})
+
+const modePlaceholder = computed(() => {
+  if (mode.value === 'registration_number') return 'e.g. GGE539JK'
+  return mode.value === 'policy_number' ? 'GIP/MTR/...' : 'Insured name'
+})
+
+const emptyHint = computed(() => {
+  if (mode.value === 'registration_number') return 'registration number'
+  return mode.value === 'policy_number' ? 'policy number' : 'name'
+})
 
 onUnmounted(() => motor.clearSearch())
 
 async function runSearch() {
   if (!query.value.trim()) {
-    toast.warning('Enter a policy number or insured name')
+    toast.warning(props.byRegistration ? 'Enter a vehicle registration number' : 'Enter a policy number or insured name')
     return
   }
   try {
@@ -137,12 +163,9 @@ function statusClass(status: string) {
     </div>
 
     <section class="card p-6">
-      <div class="flex flex-wrap gap-2">
+      <div v-if="searchModes.length > 1" class="flex flex-wrap gap-2">
         <button
-          v-for="opt in [
-            { id: 'policy_number' as SearchMode, label: 'By policy number' },
-            { id: 'insured_name' as SearchMode, label: 'By insured name' },
-          ]"
+          v-for="opt in searchModes"
           :key="opt.id"
           type="button"
           :aria-pressed="mode === opt.id"
@@ -158,10 +181,10 @@ function statusClass(status: string) {
         </button>
       </div>
 
-      <form class="mt-4 flex flex-wrap items-end gap-3" @submit.prevent="runSearch">
+      <form class="flex flex-wrap items-end gap-3" :class="searchModes.length > 1 ? 'mt-4' : ''" @submit.prevent="runSearch">
         <div class="flex-1 min-w-[16rem]">
           <label class="input-label" :for="`q-${mode}`">
-            {{ mode === 'policy_number' ? 'Policy number' : 'Insured name' }}
+            {{ modeLabel }}
           </label>
           <div class="relative">
             <Search class="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-secondary-400" />
@@ -170,7 +193,8 @@ function statusClass(status: string) {
               v-model="query"
               type="text"
               class="input-field pl-11"
-              :placeholder="mode === 'policy_number' ? 'GIP/MTR/...' : 'Insured name'"
+              :class="mode === 'registration_number' ? 'uppercase' : ''"
+              :placeholder="modePlaceholder"
             >
           </div>
         </div>
@@ -235,7 +259,9 @@ function statusClass(status: string) {
           <Inbox class="size-6 text-secondary-500" />
         </div>
         <p class="text-sm font-semibold text-secondary-900">No matching policies</p>
-        <p class="max-w-md text-sm text-secondary-500">Try a different policy number or insured name.</p>
+        <p class="max-w-md text-sm text-secondary-500">
+          {{ byRegistration ? 'Check the registration number and try again.' : 'Try a different policy number or insured name.' }}
+        </p>
       </div>
 
       <div
@@ -246,7 +272,7 @@ function statusClass(status: string) {
           <Search class="size-6 text-secondary-500" />
         </div>
         <p class="text-sm text-secondary-500">
-          Enter a {{ mode === 'policy_number' ? 'policy number' : 'name' }} above to find a policy.
+          Enter a {{ emptyHint }} above to find a policy.
         </p>
       </div>
 

@@ -311,6 +311,20 @@ export interface MotorDashboardParams {
 }
 
 export interface MotorSearchParams {
+  /** Third-party: the field POST /customer/search matches on. */
+  registration_number?: string
+  /** Comprehensive search modes (GET /variance/ez-drive/search-policy). */
   policy_number?: string
   insured_name?: string
+}
+
+/**
+ * Body for POST /customer/renew/{id}. The four editable fields are pre-filled
+ * from the searched policy, then submitted to extend cover.
+ */
+export interface MotorRenewPayload {
+  variance: string
+  id_number: string
+  identification: string
+  policy_type: string
 }

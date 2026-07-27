@@ -8,6 +8,7 @@ import type {
   MotorDashboardResponse,
   MotorDashboardParams,
   MotorRenewResponse,
+  MotorRenewPayload,
   MotorSearchParams,
   MotorSearchResponse,
   MotorVehicleMake,
@@ -429,10 +430,11 @@ export const useMotorStore = defineStore('motor', {
             cleaned[k] = String(v).trim()
           }
         }
-        const endpoint = family === 'comprehensive'
-          ? '/variance/ez-drive/search-policy'
-          : '/variance/thirdparty/search-policy'
-        const { data } = await api.get<MotorSearchResponse>(endpoint, { params: cleaned, skipErrorToast: true })
+        // Both families search by registration number via POST — third-party on
+        // the customer endpoint, comprehensive on the ez-drive endpoint.
+        const { data } = family === 'third_party'
+          ? await api.post<MotorSearchResponse>('/customer/search', cleaned, { skipErrorToast: true })
+          : await api.post<MotorSearchResponse>('/ezdrive/search-policy', cleaned, { skipErrorToast: true })
 
         let raw: unknown = data?.data
         if (raw && typeof raw === 'object' && !Array.isArray(raw) && 'data' in (raw as Record<string, unknown>)) {
@@ -464,16 +466,18 @@ export const useMotorStore = defineStore('motor', {
       this.searchPerformed = false
     },
 
-    async renewPolicy(family: MotorPolicyFamily, id: number | string) {
+    async renewPolicy(family: MotorPolicyFamily, id: number | string, payload?: MotorRenewPayload) {
       this.renewLoading = true
       this.renewError = null
       this.renewingId = id
       try {
         const api = useApi()
-        const endpoint = family === 'comprehensive'
-          ? `/variance/ez-drive/renew-policy/${id}`
-          : `/variance/thirdparty/renew-policy/${id}`
-        const { data } = await api.post<MotorRenewResponse>(endpoint, undefined, { skipSuccessToast: true, skipErrorToast: true })
+        // Third-party renews via the customer endpoint with the editable fields
+        // (variance / id_number / identification / policy_type); comprehensive
+        // keeps its one-click variance renew.
+        const { data } = family === 'third_party'
+          ? await api.post<MotorRenewResponse>(`/customer/renew/${id}`, payload, { skipSuccessToast: true, skipErrorToast: true })
+          : await api.post<MotorRenewResponse>(`/variance/ez-drive/renew-policy/${id}`, undefined, { skipSuccessToast: true, skipErrorToast: true })
         const renewed = data?.data && typeof data.data === 'object' && 'policy' in (data.data as Record<string, unknown>)
           ? (data.data as { policy: MotorPolicy }).policy
           : (data?.data as MotorPolicy | null)

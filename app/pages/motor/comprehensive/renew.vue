@@ -5,7 +5,8 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 <template>
   <MotorRenewSearch
     family="comprehensive"
+    by-registration
     category="Motor · Comprehensive"
-    subtitle="Search by policy number or insured name, then renew with one click."
+    subtitle="Search by vehicle registration number, then renew with one click."
   />
 </template>

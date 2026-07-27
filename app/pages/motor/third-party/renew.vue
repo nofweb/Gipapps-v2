@@ -3,9 +3,8 @@ definePageMeta({ layout: 'default', middleware: 'auth' })
 </script>
 
 <template>
-  <MotorRenewSearch
-    family="third_party"
+  <MotorRenewByRegistration
     category="Motor · Third Party"
-    subtitle="Search by policy number or insured name, then renew with one click."
+    subtitle="Search by vehicle registration number, then renew the policy."
   />
 </template>
