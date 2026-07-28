@@ -12,6 +12,7 @@ function select(t: HolderType) {
   error.value = null
 }
 
+
 function proceed() {
   if (!holderType.value) {
     error.value = 'Please choose a holder type'
