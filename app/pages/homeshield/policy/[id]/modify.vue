@@ -9,7 +9,7 @@ import {
   Edit3,
 } from 'lucide-vue-next'
 import { useHomeshieldStore } from '~/stores/homeshield'
-import { PROPERTY_KINDS, HOMESHIELD_CATEGORIES, findCategory } from '~/utils/homeshield-constants'
+import { propertyKindsFor, HOMESHIELD_CATEGORIES, findCategory, type HomeshieldCategoryId } from '~/utils/homeshield-constants'
 import { formatNaira } from '~/utils/format'
 import type { HomeshieldModifyPayload } from '~/types/homeshield'
 
@@ -53,6 +53,7 @@ const form = reactive<HomeshieldModifyPayload>({
   property_address: '',
   value_of_property: 0,
   property_type: 'residential',
+  property_usage: 'residential',
   property_Kind: '',
   category: 'Category A',
 })
@@ -73,6 +74,7 @@ function hydrateFromPolicy() {
   form.property_address = p.property_address ?? ''
   form.value_of_property = Number(p.value_of_property) || 0
   form.property_type = ((p.property_type?.toLowerCase() as 'residential' | 'commercial')) || 'residential'
+  form.property_usage = form.property_type
   // Normalise stored category like "CATEGORY A" → "Category A"
   const cat = (p.category || '').replace(/category\s+/i, 'Category ')
   form.category = cat || 'Category A'
@@ -83,7 +85,7 @@ watchEffect(() => {
 })
 
 const isCorporate = computed(() => form.holder_type === 'corporate')
-const categoryMeta = computed(() => findCategory(form.category as 'Category A' | 'Category B'))
+const categoryMeta = computed(() => findCategory(form.category as HomeshieldCategoryId))
 
 // Currency display sync
 const displayValue = ref('')
@@ -126,12 +128,22 @@ function validate(): boolean {
     e.value_of_property = `${categoryMeta.value.label} requires a value between ${formatNaira(categoryMeta.value.minValue)} and ${formatNaira(categoryMeta.value.maxValue)}`
   }
 
-  if (!form.property_type) e.property_type = 'Choose a property type'
-  if (!form.property_Kind?.trim()) e.property_Kind = 'Choose a property kind'
+  if (!form.property_type) e.property_type = 'Choose a property usage'
+  if (!form.property_Kind?.trim()) e.property_Kind = 'Choose a property type'
 
   errors.value = e
   return Object.keys(e).length === 0
 }
+
+// Property types on offer depend on the property usage.
+const propertyKinds = computed(() => propertyKindsFor(form.property_type))
+
+watch(() => form.property_type, (usage) => {
+  form.property_usage = usage
+  if (form.property_Kind && !propertyKinds.value.includes(form.property_Kind)) {
+    form.property_Kind = ''
+  }
+})
 
 // When holder type flips, clear the opposite-side name fields immediately.
 watch(() => form.holder_type, (t) => {
@@ -168,6 +180,7 @@ async function save() {
       property_address: form.property_address.trim(),
       value_of_property: form.value_of_property,
       property_type: form.property_type,
+      property_usage: form.property_type,
       property_Kind: form.property_Kind,
       category: form.category,
     }
@@ -346,7 +359,7 @@ async function save() {
               <label class="input-label">Category</label>
               <select v-model="form.category" class="input-field">
                 <option v-for="c in HOMESHIELD_CATEGORIES" :key="c.id" :value="c.id">
-                  {{ c.label }} — premium {{ formatNaira(c.premium) }}
+                  {{ c.label }} — {{ c.quotedByUnderwriting ? 'premium quoted by underwriting' : `premium ${formatNaira(c.premium)}` }}
                 </option>
               </select>
               <p v-if="categoryMeta" class="mt-1 text-xs text-secondary-500">
@@ -369,7 +382,7 @@ async function save() {
               <p v-if="errors.value_of_property" class="mt-1 text-xs text-tertiary-500">{{ errors.value_of_property }}</p>
             </div>
             <div>
-              <label class="input-label">Property type</label>
+              <label class="input-label">Property usage</label>
               <select v-model="form.property_type" class="input-field">
                 <option value="residential">Residential</option>
                 <option value="commercial">Commercial</option>
@@ -377,10 +390,10 @@ async function save() {
               <p v-if="errors.property_type" class="mt-1 text-xs text-tertiary-500">{{ errors.property_type }}</p>
             </div>
             <div>
-              <label class="input-label">Property kind</label>
+              <label class="input-label">Property type</label>
               <select v-model="form.property_Kind" class="input-field">
-                <option value="" disabled>Select a kind</option>
-                <option v-for="k in PROPERTY_KINDS" :key="k" :value="k">{{ k }}</option>
+                <option value="" disabled>Select a type</option>
+                <option v-for="k in propertyKinds" :key="k" :value="k">{{ k }}</option>
               </select>
               <p v-if="errors.property_Kind" class="mt-1 text-xs text-tertiary-500">{{ errors.property_Kind }}</p>
             </div>

@@ -6,10 +6,9 @@ import { useHomeshieldApplicationStore } from '~/stores/homeshield/application'
 definePageMeta({ layout: 'default', middleware: 'auth' })
 
 const app = useHomeshieldApplicationStore()
-const { step } = storeToRefs(app)
+const { step, referral, categoryCSubmitted } = storeToRefs(app)
 
-
-const STEPS = [
+const ALL_STEPS = [
   { number: 1, label: 'Category' },
   { number: 2, label: 'Holder' },
   { number: 3, label: 'Owner' },
@@ -19,6 +18,9 @@ const STEPS = [
   { number: 7, label: 'Summary' },
   { number: 8, label: 'Payment' },
 ]
+
+// Category C skips the questionnaire and the payment step.
+const STEPS = computed(() => ALL_STEPS.filter(s => app.stepNumbers.includes(s.number)))
 </script>
 
 <template>
@@ -40,6 +42,7 @@ const STEPS = [
         </div>
       </div>
       <button
+        v-if="!referral && !categoryCSubmitted"
         type="button"
         class="btn-ghost border border-secondary-100 text-sm"
         @click="app.reset()"
@@ -48,21 +51,33 @@ const STEPS = [
       </button>
     </div>
 
-    <!-- Step indicator -->
-    <div class="card p-5">
-      <HomeshieldBuyStepIndicator :current="step" :steps="STEPS" />
+    <!-- The risk was referred to underwriting — the application ends here. -->
+    <div v-if="referral" class="card p-6 sm:p-8">
+      <HomeshieldBuyReferralSubmitted />
     </div>
 
-    <!-- Active step -->
-    <div class="card p-6 sm:p-8">
-      <HomeshieldBuyCategoryStep v-if="step === 1" />
-      <HomeshieldBuyHolderTypeStep v-else-if="step === 2" />
-      <HomeshieldBuyOwnerTypeStep v-else-if="step === 3" />
-      <HomeshieldBuyPersonalInfoStep v-else-if="step === 4" />
-      <HomeshieldBuyPropertyStep v-else-if="step === 5" />
-      <HomeshieldBuyQuestionnaireStep v-else-if="step === 6" />
-      <HomeshieldBuySummaryStep v-else-if="step === 7" />
-      <HomeshieldBuyPaymentStep v-else-if="step === 8" />
+    <!-- A Category C request was sent for underwriting review — no policy is issued. -->
+    <div v-else-if="categoryCSubmitted" class="card p-6 sm:p-8">
+      <HomeshieldBuyCategoryCSubmitted />
     </div>
+
+    <template v-else>
+      <!-- Step indicator -->
+      <div class="card p-5">
+        <HomeshieldBuyStepIndicator :current="step" :steps="STEPS" />
+      </div>
+
+      <!-- Active step -->
+      <div class="card p-6 sm:p-8">
+        <HomeshieldBuyCategoryStep v-if="step === 1" />
+        <HomeshieldBuyHolderTypeStep v-else-if="step === 2" />
+        <HomeshieldBuyOwnerTypeStep v-else-if="step === 3" />
+        <HomeshieldBuyPersonalInfoStep v-else-if="step === 4" />
+        <HomeshieldBuyPropertyStep v-else-if="step === 5" />
+        <HomeshieldBuyQuestionnaireStep v-else-if="step === 6" />
+        <HomeshieldBuySummaryStep v-else-if="step === 7" />
+        <HomeshieldBuyPaymentStep v-else-if="step === 8" />
+      </div>
+    </template>
   </div>
 </template>

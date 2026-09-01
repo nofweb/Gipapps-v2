@@ -33,7 +33,7 @@ function proceed() {
       </p>
     </header>
 
-    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <button
         v-for="cat in HOMESHIELD_CATEGORIES"
         :key="cat.id"
@@ -62,7 +62,10 @@ function proceed() {
           </div>
         </div>
 
-        <p class="mt-4 text-sm font-semibold text-secondary-700">
+        <p v-if="cat.quotedByUnderwriting" class="mt-4 text-sm font-semibold text-secondary-700">
+          Premium · <span class="text-secondary-900">Quoted by underwriting</span>
+        </p>
+        <p v-else class="mt-4 text-sm font-semibold text-secondary-700">
           Premium · <span class="text-secondary-900">{{ formatNaira(cat.premium) }}</span>
         </p>
 
@@ -76,6 +79,8 @@ function proceed() {
             <span>{{ benefit }}</span>
           </li>
         </ul>
+
+        <p v-if="cat.note" class="mt-4 text-xs leading-relaxed text-secondary-500">{{ cat.note }}</p>
       </button>
     </div>
 

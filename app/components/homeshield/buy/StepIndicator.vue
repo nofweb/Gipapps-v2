@@ -11,9 +11,16 @@ const props = defineProps<{
   steps: Step[]
 }>()
 
+// Step numbers are not always contiguous — Category C skips some — so progress
+// is measured by position in the list it was given.
+const currentIndex = computed(() => {
+  const i = props.steps.findIndex(s => s.number === props.current)
+  return i === -1 ? 0 : i
+})
+
 const progress = computed(() => {
   if (props.steps.length <= 1) return 0
-  return ((props.current - 1) / (props.steps.length - 1)) * 100
+  return (currentIndex.value / (props.steps.length - 1)) * 100
 })
 </script>
 
@@ -22,7 +29,7 @@ const progress = computed(() => {
     <!-- Mobile -->
     <div class="md:hidden">
       <div class="flex items-center justify-between text-xs">
-        <span class="font-semibold text-secondary-700">Step {{ current }} of {{ steps.length }}</span>
+        <span class="font-semibold text-secondary-700">Step {{ currentIndex + 1 }} of {{ steps.length }}</span>
         <span class="text-secondary-500">
           {{ steps.find((s) => s.number === current)?.label }}
         </span>
@@ -45,22 +52,22 @@ const progress = computed(() => {
         />
         <ol class="relative flex items-center justify-between">
           <li
-            v-for="step in steps"
+            v-for="(step, i) in steps"
             :key="step.number"
             class="flex flex-col items-center gap-2"
           >
             <span
               :class="[
                 'flex size-9 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-300',
-                step.number < current
+                i < currentIndex
                   ? 'border-primary bg-primary text-primary-foreground shadow-glow-primary'
                   : step.number === current
                     ? 'border-primary bg-card text-primary-700 scale-110 shadow-md'
                     : 'border-secondary-200 bg-card text-secondary-500',
               ]"
             >
-              <Check v-if="step.number < current" class="size-4" />
-              <span v-else>{{ step.number }}</span>
+              <Check v-if="i < currentIndex" class="size-4" />
+              <span v-else>{{ i + 1 }}</span>
             </span>
             <span
               :class="[

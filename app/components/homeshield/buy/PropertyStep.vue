@@ -2,7 +2,7 @@
 import { ArrowLeft, ArrowRight, Home, Building, Check } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useHomeshieldApplicationStore } from '~/stores/homeshield/application'
-import { findCategory, PROPERTY_KINDS } from '~/utils/homeshield-constants'
+import { findCategory, propertyKindsFor, CATEGORY_C_MIN_EXCLUSIVE } from '~/utils/homeshield-constants'
 import { formatNaira } from '~/utils/format'
 
 const app = useHomeshieldApplicationStore()
@@ -17,6 +17,13 @@ const {
 const errors = ref<Record<string, string>>({})
 
 const categoryMeta = computed(() => findCategory(category.value))
+
+// Property types on offer depend on the property usage.
+const propertyKinds = computed(() => propertyKindsFor(propertyType.value))
+
+function selectPropertyUsage(usage: 'residential' | 'commercial') {
+  app.setPropertyType(usage)
+}
 
 // Display value as a formatted string while keeping numeric value in store.
 const displayValue = ref('')
@@ -48,12 +55,19 @@ function validate() {
     e.valueOfProperty = 'Enter the property value'
   }
   else if (categoryMeta.value) {
-    if (valueOfProperty.value < categoryMeta.value.minValue || valueOfProperty.value > categoryMeta.value.maxValue) {
-      e.valueOfProperty = `${categoryMeta.value.label} requires a value between ${formatNaira(categoryMeta.value.minValue)} and ${formatNaira(categoryMeta.value.maxValue)}`
+    const meta = categoryMeta.value
+    if (!Number.isFinite(meta.maxValue)) {
+      // Open-ended band (Category C) — only a lower bound applies.
+      if (valueOfProperty.value <= CATEGORY_C_MIN_EXCLUSIVE) {
+        e.valueOfProperty = `${meta.label} requires a value above ${formatNaira(CATEGORY_C_MIN_EXCLUSIVE)}`
+      }
+    }
+    else if (valueOfProperty.value < meta.minValue || valueOfProperty.value > meta.maxValue) {
+      e.valueOfProperty = `${meta.label} requires a value between ${formatNaira(meta.minValue)} and ${formatNaira(meta.maxValue)}`
     }
   }
-  if (!propertyType.value) e.propertyType = 'Choose a property type'
-  if (!propertyKind.value) e.propertyKind = 'Choose a property kind'
+  if (!propertyType.value) e.propertyType = 'Choose a property usage'
+  if (!propertyKind.value) e.propertyKind = 'Choose a property type'
   errors.value = e
   return Object.keys(e).length === 0
 }
@@ -106,7 +120,7 @@ function proceed() {
       </div>
 
       <div>
-        <p class="input-label">Property type</p>
+        <p class="input-label">Property usage</p>
         <div class="grid grid-cols-2 gap-3">
           <button
             v-for="opt in [
@@ -122,7 +136,7 @@ function proceed() {
                 ? 'border-primary bg-primary-50'
                 : 'border-secondary-100 bg-card hover:border-primary-200',
             ]"
-            @click="propertyType = opt.id as 'residential' | 'commercial'"
+            @click="selectPropertyUsage(opt.id as 'residential' | 'commercial')"
           >
             <component :is="opt.icon" :class="['size-5', propertyType === opt.id ? 'text-primary-700' : 'text-secondary-500']" />
             <span :class="['flex-1 text-sm font-semibold', propertyType === opt.id ? 'text-secondary-900' : 'text-secondary-700']">
@@ -135,10 +149,13 @@ function proceed() {
       </div>
 
       <div>
-        <p class="input-label">Property kind</p>
-        <div class="flex flex-wrap gap-2">
+        <p class="input-label">Property type</p>
+        <p v-if="!propertyKinds.length" class="text-xs text-secondary-500">
+          Select a property usage above to see the available property types.
+        </p>
+        <div v-else class="flex flex-wrap gap-2">
           <button
-            v-for="kind in PROPERTY_KINDS"
+            v-for="kind in propertyKinds"
             :key="kind"
             type="button"
             :aria-pressed="propertyKind === kind"

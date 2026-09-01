@@ -49,12 +49,14 @@ async function pay() {
         reference,
       })
       const policy = await app.purchase(resp.reference)
+      if (!policy) throw new Error('Payment went through but no policy was returned.')
       toast.success('Payment successful — your policy is being processed.')
       app.reset()
       await router.push(`/homeshield/policy/${policy.id}`)
     }
     else {
       const policy = await app.purchase()
+      if (!policy) throw new Error('Wallet was charged but no policy was returned.')
       toast.success('Wallet charged — your policy is being processed.')
       app.reset()
       await router.push(`/homeshield/policy/${policy.id}`)

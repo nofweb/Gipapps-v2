@@ -100,18 +100,25 @@ export interface HomeshieldPurchasePayload {
   property_address: string
   value_of_property: number
   property_type: 'residential' | 'commercial'
+  /** Residential or commercial — the API requires this alongside property_type. */
+  property_usage: 'residential' | 'commercial'
+  /** Flat, Bungalow, Office Building, … */
+  property_kind: string
   category: string
   payment_method: 'WALLET' | 'PAYSTACK'
+  /** Not sent for Category C — nothing is charged. */
   transaction_reference?: string
-  questionnaire_answers: HomeshieldQuestionnaireAnswerInput[]
+  /** Not sent for Category C — the underwriting questions are asked off-line. */
+  questionnaire_answers?: HomeshieldQuestionnaireAnswerInput[]
 }
 
 export interface HomeshieldPurchaseResponse {
   status: string
   message: string
-  data: {
-    policy: HomeshieldPolicy
-  }
+  /** Absent for Category C — no policy is created, only a request for review. */
+  data?: {
+    policy?: HomeshieldPolicy
+  } | null
 }
 
 export interface HomeshieldModifyPayload {
@@ -134,6 +141,8 @@ export interface HomeshieldModifyPayload {
   property_address: string
   value_of_property: number
   property_type: 'residential' | 'commercial'
+  /** Residential or commercial — the API requires this alongside property_type. */
+  property_usage: 'residential' | 'commercial'
   /** Note: API field is camelCase with capital K. */
   property_Kind?: string
   category: string
