@@ -164,10 +164,10 @@ function proceed() {
           <div class="flex items-start gap-3">
             <AlertTriangle class="size-5 shrink-0 text-tertiary-500" />
             <div class="text-sm leading-relaxed text-secondary-700">
-              <p class="font-semibold text-secondary-900">We cannot proceed with this application</p>
+              <p class="font-semibold text-secondary-900">We’re unable to proceed.</p>
               <p class="mt-1">
-                Cover cannot be offered where a previous policy ended for this reason. Refer the
-                client to the technical underwriting team if they want to discuss their options.
+                Cover cannot be offered as a previous insurer has declined or terminated your cover
+                for this reason.
               </p>
             </div>
           </div>
